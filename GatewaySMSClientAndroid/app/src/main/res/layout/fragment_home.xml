@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".HomeFragment">
+
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="NOT ACTIVE"
+        android:textAlignment="center"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:background="@color/negative"/>
+
+    <TextView
+        android:id="@+id/tvHome1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Messages sent:"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <TextView
+        android:id="@+id/tvMessagesSent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textAlignment="center"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:background="@color/positive"/>
+
+    <TextView
+        android:id="@+id/tvHome2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Messages NOT sent:"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <TextView
+        android:id="@+id/tvMessagesNOTSent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textAlignment="center"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:background="@color/negative"/>
+
+    <TextView
+        android:id="@+id/tvHome3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Device ID:"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <TextView
+        android:id="@+id/tvDeviceID"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textAlignment="center"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textSize="36sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tvHome4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="URL Server:"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <EditText
+        android:id="@+id/etURL"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textUri"
+        android:text="http://192.168.1.105:3000"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CONNECT"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textStyle="bold"/>
+    <Button
+        android:id="@+id/btnDisconnect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="DISCONNECT"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textStyle="bold"/>
+
+
+</LinearLayout>

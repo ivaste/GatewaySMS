@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 public class LogFragment extends Fragment {
 
-
+    TextView tvLOG;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -20,6 +20,7 @@ public class LogFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_log, container, false);
 
+        tvLOG = (TextView)view.findViewById(R.id.tvLOG);
 
 
 

@@ -32,4 +32,7 @@ dependencies {
     implementation('com.github.nkzawa:socket.io-client:0.5.0') {
         exclude group: 'org.json', module: 'json'
     }
+
+    //Communication between fragments
+    implementation 'org.greenrobot:eventbus:3.1.1'
 }

@@ -4,15 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".LogFragment">
+    tools:context=".LogFragment"
+    android:id="@+id/fragmentLog">
 
 
     <TextView
         android:id="@+id/tvLOG"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="TextView"
-        android:textAppearance="@android:style/TextAppearance.Large"/>
+        android:text=""
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:scrollbars="vertical"
+        android:gravity="bottom"
+        android:paddingBottom="15dp"/>
 
 
 </LinearLayout>

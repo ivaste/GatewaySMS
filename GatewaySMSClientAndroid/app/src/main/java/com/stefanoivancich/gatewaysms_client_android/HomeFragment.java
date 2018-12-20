@@ -3,7 +3,9 @@ package com.stefanoivancich.gatewaysms_client_android;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.telephony.SmsManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +33,11 @@ public class HomeFragment extends Fragment {
     private Button btnDisconnect;
     private EditText etURI;
     private String uri;
-    TextView tvLOG;
+    private TextView tvStatus;
+    private TextView tvMessagesSent;
+    private int messagesSent;
+    private TextView tvMessagesNOTSent;
+    private int messagesNOTSent;
     private Socket socket;
 
 
@@ -47,13 +53,22 @@ public class HomeFragment extends Fragment {
         tvDeviceID.setText(deviceId);
 
         // UI elements
-        //tvLOG = getView().findViewById(R.id.tvLOG);
+        tvStatus = (TextView)view.findViewById(R.id.tvStatus);
+        tvMessagesSent = (TextView)view.findViewById(R.id.tvMessagesSent);
+        tvMessagesNOTSent = (TextView)view.findViewById(R.id.tvMessagesNOTSent);
         btnConnect = (Button)view.findViewById(R.id.btnConnect);
         btnDisconnect = (Button)view.findViewById(R.id.btnDisconnect);
         etURI = (EditText)view.findViewById(R.id.etURI);
         etURI.setEnabled(true);
         btnConnect.setEnabled(true);
         btnDisconnect.setEnabled(false);
+        tvStatus.setText("NOT ACTIVE");
+        tvStatus.setBackgroundColor(getResources().getColor(R.color.negative));
+        messagesSent=0;
+        tvMessagesSent.setText(String.valueOf(messagesSent));
+        messagesNOTSent=0;
+        tvMessagesNOTSent.setText(String.valueOf(messagesNOTSent));
+
 
 
         // Button CONNECT
@@ -71,6 +86,10 @@ public class HomeFragment extends Fragment {
 
                     btnConnect.setEnabled(false);
                     btnDisconnect.setEnabled(true);
+                    etURI.setEnabled(false);
+                    tvStatus.setText("ACTIVE");
+                    tvStatus.setBackgroundColor(getResources().getColor(R.color.positive));
+
 
                     //SOCKET LISTENER
                     socket.on("message", new Emitter.Listener() {
@@ -84,24 +103,26 @@ public class HomeFragment extends Fragment {
 
                                         //extract data from fired event
                                         String number = data.getString("number");
-                                        String code = data.getString("code");
+                                        String text = data.getString("text");
 
-                                        // Show data received in text view
-                                        /*output=output+number+": "+code+"\n";
-                                        tvOutput.setText(output);*/
+                                        // Update Log
+                                        Events.HomeToLog homeToLogEvent =
+                                            new Events.HomeToLog(number+": "+text+"\n");
+                                        GlobalBus.getBus().post(homeToLogEvent);
 
-
-                                        tvLOG.setText(tvLOG.getText()+number+": "+code+"\n");
-
-                                        // Send SMS
-                                        /*try{
+                                      // Send SMS
+                                        try{
                                             SmsManager smgr = SmsManager.getDefault();
-                                            smgr.sendTextMessage(number,null,code,null,null);
+                                            smgr.sendTextMessage(number,null,text,null,null);
+                                            messagesSent++;
+                                            tvMessagesSent.setText(String.valueOf(messagesSent));
                                             Toast.makeText(getContext(), "SMS Sent Successfully", Toast.LENGTH_SHORT).show();
                                         }
                                         catch (Exception e){
+                                            messagesNOTSent++;
+                                            tvMessagesNOTSent.setText(String.valueOf(messagesNOTSent));
                                             Toast.makeText(getContext(), "SMS Failed to Send, Please try again", Toast.LENGTH_SHORT).show();
-                                        }*/
+                                        }
 
                                     } catch (JSONException e) {
                                         e.printStackTrace();
@@ -130,6 +151,8 @@ public class HomeFragment extends Fragment {
                 etURI.setEnabled(true);
                 btnConnect.setEnabled(true);
                 btnDisconnect.setEnabled(false);
+                tvStatus.setText("NOT ACTIVE");
+                tvStatus.setBackgroundColor(getResources().getColor(R.color.negative));
             }
         });
 
@@ -143,6 +166,14 @@ public class HomeFragment extends Fragment {
         super.onDestroy();
 
         socket.disconnect();
+
+        etURI.setEnabled(true);
+        btnConnect.setEnabled(true);
+        btnDisconnect.setEnabled(false);
+        tvStatus.setText("NOT ACTIVE");
+        tvStatus.setBackgroundColor(getResources().getColor(R.color.negative));
+
+
     }
 
 

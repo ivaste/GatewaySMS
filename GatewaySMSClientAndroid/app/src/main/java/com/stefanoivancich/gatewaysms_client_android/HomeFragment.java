@@ -3,9 +3,10 @@ package com.stefanoivancich.gatewaysms_client_android;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.telephony.SmsManager;
 import android.util.Log;
+
+// UI libraries
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,14 +15,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
+// Socket IO libraries
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.net.URISyntaxException;
 
 
@@ -79,19 +78,38 @@ public class HomeFragment extends Fragment {
 
                 //Connect Socket client to the server
                 try {
-                    socket = IO.socket(uri);
+                    // Connect to socket
+                    IO.Options opts = new IO.Options(); //Needed otherwise every time
+                    opts.forceNew=true;
+                    opts.reconnection=false;
+                    socket = IO.socket(uri,opts);
                     socket.connect();
 
-                    Toast.makeText(getContext(), "Connected at "+uri,Toast.LENGTH_SHORT).show();
+                    // Listen the Connection Acknowledge
+                    socket.on("conACK", new Emitter.Listener() {
+                        @Override
+                        public void call(Object... args) {
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Log.d("HomeFragment","Connection Acknowledge");
 
-                    btnConnect.setEnabled(false);
-                    btnDisconnect.setEnabled(true);
-                    etURI.setEnabled(false);
-                    tvStatus.setText("ACTIVE");
-                    tvStatus.setBackgroundColor(getResources().getColor(R.color.positive));
+                                    // Send to server my Android unique device id
+                                    socket.emit("idAndroid",deviceId);
+
+                                    // Set UI components properly for  active state
+                                    btnConnect.setEnabled(false);
+                                    btnDisconnect.setEnabled(true);
+                                    etURI.setEnabled(false);
+                                    tvStatus.setText("ACTIVE");
+                                    tvStatus.setBackgroundColor(getResources().getColor(R.color.positive));
+                                }
+                            });
+                        }
+                    });
 
 
-                    //SOCKET LISTENER
+                    // Listen the message to be sent
                     socket.on("message", new Emitter.Listener() {
                         @Override
                         public void call(final Object... args) {
@@ -101,27 +119,43 @@ public class HomeFragment extends Fragment {
                                     JSONObject data = (JSONObject) args[0];
                                     try {
 
-                                        //extract data from fired event
+                                        // Extract data from socket
                                         String number = data.getString("number");
                                         String text = data.getString("text");
+                                        String idSMS = data.getString("idSMS");
 
-                                        // Update Log
-                                        Events.HomeToLog homeToLogEvent =
-                                            new Events.HomeToLog(number+": "+text+"\n");
-                                        GlobalBus.getBus().post(homeToLogEvent);
 
-                                      // Send SMS
+
+                                        // Send SMS
                                         try{
                                             SmsManager smgr = SmsManager.getDefault();
                                             smgr.sendTextMessage(number,null,text,null,null);
+
+                                            // Send to server sms Acknowledge
+                                            socket.emit("smsACK",idSMS);
+
+                                            // Update UI
                                             messagesSent++;
                                             tvMessagesSent.setText(String.valueOf(messagesSent));
-                                            Toast.makeText(getContext(), "SMS Sent Successfully", Toast.LENGTH_SHORT).show();
+
+                                            // Update Log Fragment
+                                            Events.HomeToLog homeToLogEvent =
+                                                new Events.HomeToLog("SENT: "+number+": "+text+"\n");
+                                            GlobalBus.getBus().post(homeToLogEvent);
                                         }
                                         catch (Exception e){
+
+                                            // Send to server sms NOT Acknowledge
+                                            socket.emit("smsNACK",idSMS);
+
+                                            // Update UI
                                             messagesNOTSent++;
                                             tvMessagesNOTSent.setText(String.valueOf(messagesNOTSent));
-                                            Toast.makeText(getContext(), "SMS Failed to Send, Please try again", Toast.LENGTH_SHORT).show();
+
+                                            // Update Log Fragment
+                                            Events.HomeToLog homeToLogEvent =
+                                                new Events.HomeToLog("NOT SENT: "+number+": "+text+"\n");
+                                            GlobalBus.getBus().post(homeToLogEvent);
                                         }
 
                                     } catch (JSONException e) {

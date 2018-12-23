@@ -1,11 +1,13 @@
 package com.stefanoivancich.gatewaysms_client_android;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,6 +28,13 @@ public class MainActivity extends AppCompatActivity {
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
+        // Start the SocketIO Service if is not running
+        if(!SocketIoService.isRunning()){
+          startService(new Intent(this, SocketIoService.class));
+          //Toast.makeText(this, "Service NOT running",Toast.LENGTH_SHORT).show();
+        }else{
+            //Toast.makeText(this, "Service IS running",Toast.LENGTH_SHORT).show();
+        }
 
 
 

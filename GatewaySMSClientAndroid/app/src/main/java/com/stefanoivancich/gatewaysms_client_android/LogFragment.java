@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 
 public class LogFragment extends Fragment {
@@ -44,7 +45,7 @@ public class LogFragment extends Fragment {
 
 
 
-  @Subscribe
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void getMessage(Events.HomeToLog event) {
       tvLOG.setText(tvLOG.getText()+event.getMessage());
 

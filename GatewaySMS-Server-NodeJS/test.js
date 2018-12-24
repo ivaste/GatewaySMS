@@ -170,10 +170,14 @@ function chooseDevice(){
 	//return randomIntInc(0, devices.length-1); //choose random
 	//Choose that one that has less SmsToSend
 	var min=10000;
+	var index=0;
 	for(d in devices){
-		if(devices[d].smsToSend<min) min=devices[d].smsToSend;
+		if(devices[d].smsToSend<min){
+			min=devices[d].smsToSend;
+			index=d;
+		}
 	}
-	return min;
+	return index;
 }
 
 

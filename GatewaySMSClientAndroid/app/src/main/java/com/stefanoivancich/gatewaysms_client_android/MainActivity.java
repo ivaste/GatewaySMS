@@ -1,6 +1,7 @@
 package com.stefanoivancich.gatewaysms_client_android;
 
 import android.content.Intent;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -30,8 +31,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Start the SocketIO Service if is not running
         if(!SocketIoService.isRunning()){
-          startService(new Intent(this, SocketIoService.class));
+
+          //startService(new Intent(this, SocketIoService.class));
           //Toast.makeText(this, "Service NOT running",Toast.LENGTH_SHORT).show();
+            Intent service = new Intent(this,SocketIoService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(service);
+            } else{
+                startService(new Intent(this, SocketIoService.class));
+            }
         }else{
             //Toast.makeText(this, "Service IS running",Toast.LENGTH_SHORT).show();
         }

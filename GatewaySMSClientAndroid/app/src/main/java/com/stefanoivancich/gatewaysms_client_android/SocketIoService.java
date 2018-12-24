@@ -1,9 +1,17 @@
 package com.stefanoivancich.gatewaysms_client_android;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.NotificationCompat;
 import android.telephony.SmsManager;
 import android.util.Log;
 
@@ -18,11 +26,17 @@ import java.net.URISyntaxException;
 // EventBus library
 import org.greenrobot.eventbus.Subscribe;
 
+import static android.support.v4.app.NotificationCompat.PRIORITY_MIN;
+
 
 public class SocketIoService extends Service {
 
   private static boolean isRunning = false; // Is the Service Active?
   private static boolean isConnected = false; // Is the Service connected to the server?
+
+  // Constants
+  private static final int ID_SERVICE = 101;
+
 
   private String deviceId;
   private String uri;
@@ -43,18 +57,51 @@ public class SocketIoService extends Service {
   }
 
   @Override
+  public void onCreate() {
+    super.onCreate();
+
+    // Create the Foreground Service
+    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    String channelId = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? createNotificationChannel(notificationManager) : "";
+    NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId);
+    Notification notification = notificationBuilder.setOngoing(true)
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setPriority(PRIORITY_MIN)
+        .setContentTitle("GatewaySMS WeStudents")
+        .setCategory(NotificationCompat.CATEGORY_SERVICE)
+        .build();
+
+    startForeground(ID_SERVICE, notification);
+
+
+
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private String createNotificationChannel(NotificationManager notificationManager){
+    String channelId = "my_service_channelid";
+    String channelName = "My Foreground Service";
+    NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+    // omitted the LED color
+    channel.setImportance(NotificationManager.IMPORTANCE_NONE);
+    channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+    notificationManager.createNotificationChannel(channel);
+    return channelId;
+  }
+
+  @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
-    isRunning = true;
+      isRunning = true;
 
-    Log.d("SocketIOService","ON START COMMAND");
+      Log.d("SocketIOService","ON START COMMAND");
 
-    // Register the event to subscribe.
-    GlobalBus.getBus().register(this);
+      // Register the event to subscribe.
+      GlobalBus.getBus().register(this);
 
-    deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+      deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-    uri="http://192.168.1.105:3000";
-    connectToSocket();
+      uri="http://192.168.1.105:3000";
+      connectToSocket();
 
     return START_STICKY;
   }

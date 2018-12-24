@@ -1,6 +1,7 @@
 package com.stefanoivancich.gatewaysms_client_android;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
@@ -68,7 +69,9 @@ public class HomeFragment extends Fragment {
         //messagesNOTSent=0;
         //tvMessagesNOTSent.setText(String.valueOf(messagesNOTSent));
 
-
+        if(SocketIoService.isRunning()){
+            setUIState(true);
+        }
 
         // Button CONNECT
         btnConnect.setOnClickListener(new View.OnClickListener() {
@@ -78,7 +81,13 @@ public class HomeFragment extends Fragment {
 
                 // Start the SocketIO Service if is not running
                 if(!SocketIoService.isRunning()){
-                    getActivity().startService(new Intent(getContext(), SocketIoService.class));
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        getActivity().startForegroundService(new Intent(getContext(), SocketIoService.class));
+
+                    }else{
+                        getActivity().startService(new Intent(getContext(), SocketIoService.class));
+                    }
                     Toast.makeText(getContext(), "Service NOT running",Toast.LENGTH_SHORT).show();
                 }else Toast.makeText(getContext(), "Service IS running",Toast.LENGTH_SHORT).show();
 

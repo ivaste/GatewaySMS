@@ -59,19 +59,13 @@ public class HomeFragment extends Fragment {
         btnConnect = (Button)view.findViewById(R.id.btnConnect);
         btnDisconnect = (Button)view.findViewById(R.id.btnDisconnect);
         etURI = (EditText)view.findViewById(R.id.etURI);
-        ///etURI.setEnabled(true);
-        //btnConnect.setEnabled(true);
-        //btnDisconnect.setEnabled(false);
-        //tvStatus.setText("NOT ACTIVE");
-        //tvStatus.setBackgroundColor(getResources().getColor(R.color.negative));
-        //messagesSent=0;
-        //tvMessagesSent.setText(String.valueOf(messagesSent));
-        //messagesNOTSent=0;
-        //tvMessagesNOTSent.setText(String.valueOf(messagesNOTSent));
 
-        if(SocketIoService.isRunning()){
+        // If the Service is connected to the server, set the UI properly
+        Log.d("SHomeFragment","status socket: "+SocketIoService.isConnected());
+        if(SocketIoService.isConnected()){
+
             setUIState(true);
-        }
+        }else setUIState(false);
 
         // Button CONNECT
         btnConnect.setOnClickListener(new View.OnClickListener() {
@@ -81,15 +75,13 @@ public class HomeFragment extends Fragment {
 
                 // Start the SocketIO Service if is not running
                 if(!SocketIoService.isRunning()){
-
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         getActivity().startForegroundService(new Intent(getContext(), SocketIoService.class));
 
                     }else{
                         getActivity().startService(new Intent(getContext(), SocketIoService.class));
                     }
-                    Toast.makeText(getContext(), "Service NOT running",Toast.LENGTH_SHORT).show();
-                }else Toast.makeText(getContext(), "Service IS running",Toast.LENGTH_SHORT).show();
+                }
 
                 // Tell to service to Connect to SocketIO
                 Events.connect connect = new Events.connect(uri);
@@ -130,11 +122,9 @@ public class HomeFragment extends Fragment {
 
         // If Active
         if(state){
-
             btnConnect.setEnabled(false);
             Log.d("SHomeFragment","SetUIState");
             btnDisconnect.setEnabled(true);
-
             etURI.setEnabled(false);
             tvStatus.setText("ACTIVE");
             tvStatus.setBackgroundColor(getResources().getColor(R.color.positive));

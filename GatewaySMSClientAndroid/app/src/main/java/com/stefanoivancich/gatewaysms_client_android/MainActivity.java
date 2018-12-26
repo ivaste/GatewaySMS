@@ -31,9 +31,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Start the SocketIO Service if is not running
         if(!SocketIoService.isRunning()){
-
-          //startService(new Intent(this, SocketIoService.class));
-          //Toast.makeText(this, "Service NOT running",Toast.LENGTH_SHORT).show();
             Intent service = new Intent(this,SocketIoService.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(service);

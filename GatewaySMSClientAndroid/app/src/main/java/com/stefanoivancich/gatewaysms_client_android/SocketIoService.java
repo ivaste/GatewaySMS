@@ -37,7 +37,6 @@ public class SocketIoService extends Service {
   // Constants
   private static final int ID_SERVICE = 101;
 
-
   private String deviceId;
   private String uri;
   private int messagesSent=0;
@@ -49,7 +48,7 @@ public class SocketIoService extends Service {
     return isRunning;
   }
   // Is the Service connected to the server?
-  public static boolean icConnected(){
+  public static boolean isConnected(){
     return isConnected;
   }
 
@@ -79,8 +78,8 @@ public class SocketIoService extends Service {
 
   @RequiresApi(Build.VERSION_CODES.O)
   private String createNotificationChannel(NotificationManager notificationManager){
-    String channelId = "my_service_channelid";
-    String channelName = "My Foreground Service";
+    String channelId = "GatewaySMS WeStudents";
+    String channelName = "GatewaySMS WeStudents Service";
     NotificationChannel channel = new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
     // omitted the LED color
     channel.setImportance(NotificationManager.IMPORTANCE_NONE);
@@ -109,6 +108,7 @@ public class SocketIoService extends Service {
   @Override
   public void onDestroy() {
     isRunning = false;
+    isConnected=false;
 
     Log.d("SocketIOService","ON DESTROY");
 
@@ -129,6 +129,8 @@ public class SocketIoService extends Service {
       socket = IO.socket(uri,opts);
       socket.connect();
 
+
+
       // Listen the Connection Acknowledge
       socket.on("conACK", new Emitter.Listener() {
         @Override
@@ -137,6 +139,9 @@ public class SocketIoService extends Service {
 
           // Send to server my Android unique device id
           socket.emit("idAndroid",deviceId);
+
+          // Update status flag
+          isConnected=true;
 
           // Set UI components to ACTIVE state
           Events.activeUI event = new Events.activeUI(true);
@@ -210,6 +215,7 @@ public class SocketIoService extends Service {
 
   private void disconnectFromSocket(){
     socket.disconnect();
+    isConnected=false;
   }
 
 

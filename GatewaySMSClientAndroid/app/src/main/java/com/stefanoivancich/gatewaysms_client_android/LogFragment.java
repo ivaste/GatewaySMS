@@ -46,7 +46,7 @@ public class LogFragment extends Fragment {
 
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void getMessage(Events.HomeToLog event) {
+    public void getMessage(Events.UpdateLog event) {
       tvLOG.setText(tvLOG.getText()+event.getMessage());
 
     }

@@ -178,9 +178,9 @@ public class SocketIoService extends Service {
               GlobalBus.getBus().post(event);
 
               // Update LOG Fragment
-              Events.HomeToLog homeToLogEvent =
-                  new Events.HomeToLog("SENT: "+number+": "+text+"\n");
-              GlobalBus.getBus().post(homeToLogEvent);
+              Events.UpdateLog UpdateLogEvent =
+                  new Events.UpdateLog("SENT: "+number+": "+text+"\n");
+              GlobalBus.getBus().post(UpdateLogEvent);
 
             }catch (Exception e){
               // Send to server sms NOT Acknowledge
@@ -192,9 +192,9 @@ public class SocketIoService extends Service {
               GlobalBus.getBus().post(event);
 
               // Update LOG Fragment
-              Events.HomeToLog homeToLogEvent =
-                  new Events.HomeToLog("NOT SENT: "+number+": "+text+"\n");
-              GlobalBus.getBus().post(homeToLogEvent);
+              Events.UpdateLog UpdateLogEvent =
+                  new Events.UpdateLog("NOT SENT: "+number+": "+text+"\n");
+              GlobalBus.getBus().post(UpdateLogEvent);
 
             }
 

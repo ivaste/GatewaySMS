@@ -1,3 +1,6 @@
+/////////////////////////////////////////////////////////////////
+////////////////////// LIBRARIES /////////////////////////////////
+/////////////////////////////////////////////////////////////////
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
@@ -9,13 +12,24 @@ var http = require('http');
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 
+// Write file on disk
+var fs = require('fs');
+/////////////////////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////////////////////
+///////////////////////// SERVER SET-UP /////////////////////////////
+/////////////////////////////////////////////////////////////////
 server.listen(3000,()=>{
 	console.log('Node app is running on port 3000');
 	printDevices();
 })
+/////////////////////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////////////////////
+/////////////////  VARIABLES ////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // Available devices
 var devices = [];
 // Single device object
@@ -25,7 +39,7 @@ function device(idAndroid, idSocket){
 	this.connected=true;
 	this.number="";
 	this.smsToSend=0;
-	this.lastSMS=Date.now();
+	this.lastSMS=0;
 	this.consecutiveFails=0;
 	this.hourSended=0;
 	this.weekSended=0;
@@ -43,8 +57,12 @@ function sms(id,number,text){
 	this.sending=false;
 	this.sended=false;
 }
+/////////////////////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////////////////////
+///////////////////// API ///////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // API POST method
 app.post('/sendmessage', function (req, res) {
 	var number = req.body.number
@@ -62,7 +80,12 @@ app.post('/sendmessage', function (req, res) {
 	res.send("ciao");
 		
 });
+/////////////////////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////////////////////
+/////////////// CONNECTION WITH SMARTPHONE //////////////////////
+/////////////////////////////////////////////////////////////////
 // Function executed every time a client connect
 io.on('connection', (socket) => {
 
@@ -159,8 +182,13 @@ io.on('connection', (socket) => {
 	})
 	
 })
+/////////////////////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////////////////////
+/////////////////// MAIN FUNCTIONS //////////////////////////////
+/////////////////////////////////////////////////////////////////
+// SEND MESSAGE
 function sendMessage(number, text, idSMS){
 	if(devices.length<=0) return false;
 	// Choose which device has to send the message
@@ -192,22 +220,9 @@ function sendMessage(number, text, idSMS){
 	
 }
 
-
-// Function that decides which device has to sent the message
+// CHOOSE DEVICE
+// Decides which device has to sent the message
 function chooseDevice(){
-	//return randomIntInc(0, devices.length-1); //choose random
-	//Choose that one that has less smsToSend
-	/*var min=10000;
-	var index=-1;
-	for(d in devices){
-		if(devices[d].smsToSend<min && devices[d].connected==true){
-			min=devices[d].smsToSend;
-			index=d;
-		}
-	}
-	return index;*/
-	
-	
 	//Choose the device that has minimum(1*smsToSend + 5*consecutiveFails)
 	var min=10000;
 	var index=-1;
@@ -222,8 +237,7 @@ function chooseDevice(){
 	
 }
 
-
-// Function that sends pending SMS not sent
+// SEND PENDING SMS
 function sendPendingSMS(){
 	printsmsPendingList();//LOG
 	if(smsPendingList.length>0 && devices.length>0){
@@ -235,11 +249,12 @@ function sendPendingSMS(){
 			}
 		}
 	}
-	setTimeout(sendPendingSMS, 30*1000);
+	setTimeout(sendPendingSMS, 30*1000); // 30 seconds
 }
-setTimeout(sendPendingSMS, 30*1000);
+setTimeout(sendPendingSMS, 30*1000); // 30 seconds
 
 
+// DELETE OLD SMS
 // If an SMS is >5 min older must be deleted from pending list
 function deleteOldSMS(){
 	if(smsPendingList.length>0){
@@ -253,14 +268,57 @@ function deleteOldSMS(){
 		}
 		printsmsPendingList("deleteOldSMS()")
 	}
-	setTimeout(deleteOldSMS, 5*60*1000);
+	setTimeout(deleteOldSMS, 5*60*1000); // 5 minutes
 }
-setTimeout(deleteOldSMS, 5*60*1000);
-
-// if a device has too many
+setTimeout(deleteOldSMS, 5*60*1000); // 5 minutes
 
 
-//////////////// LOG FUNCTIONS //////////////////////////
+// DISCONNECT FAILING DEVICES
+// If a device has too many fails, shut it down
+function disconnectFailing(){
+	for(d in devices){
+		if(devices[d].consecutiveFails>=10){
+			console.log("\nDevice "+devices[d].idAndroid+" has been disconnected due to too many fails");
+			io.to(devices[d].idSocket).emit("fail","You've been disconnected");
+			devices[d].connected=false;
+			devices[d].smsToSend=0;
+			devices[d].consecutiveFails=0;
+		}
+	}
+	
+	setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
+}
+setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
+
+
+// SAVE THE STATE OF THE SYSTEM
+function saveState(){
+	var myJSON = JSON.stringify(devices);
+	fs.writeFile("systemState/devices.json", myJSON, function(err) {
+			if (err) {
+					console.log(err);
+			}
+	});
+	
+	var myJSON = JSON.stringify(smsPendingList);
+	fs.writeFile("systemState/smsPendingList.json", myJSON, function(err) {
+			if (err) {
+					console.log(err);
+			}
+	});
+	
+	console.log("\nState saved");
+	setTimeout(saveState, 1*60*1000); // 1 minutes
+}
+setTimeout(saveState, 1*60*1000); // 1 minutes
+
+/////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////
+//////////////// LOG FUNCTIONS //////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // Display current state of Devices
 function printDevices(method=""){
 	console.log(method);
@@ -286,9 +344,13 @@ function printState(method=""){
 	printDevices();
 	printsmsPendingList();
 }
+/////////////////////////////////////////////////////////////////
 
 
+/////////////////////////////////////////////////////////////////
+///////////// SUPPORT FUNCTIONS /////////////////////////////////
+/////////////////////////////////////////////////////////////////
 // Random integer number
-function randomIntInc(low, high) {
+/*function randomIntInc(low, high) {
   return Math.floor(Math.random() * (high - low + 1) + low)
-}
+}*/

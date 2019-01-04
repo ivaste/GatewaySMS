@@ -100,7 +100,7 @@ public class SocketIoService extends Service {
       deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
       uri="http://192.168.1.105:3000";
-      connectToSocket();
+      //connectToSocket();
 
     return START_STICKY;
   }

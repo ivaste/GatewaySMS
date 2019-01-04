@@ -18,21 +18,31 @@ server.listen(3000,()=>{
 
 // Available devices
 var devices = [];
-/*var device = {
-	idAndroid:0,
-	idSocket:0,
-	number:0,
-	smsToSend:10,
-	lastSMS:Date.now()
-};*/
+// Single device object
+function device(idAndroid, idSocket){
+	this.idAndroid=idAndroid;
+	this.idSocket=idSocket;
+	this.connected=true;
+	this.number="";
+	this.smsToSend=0;
+	this.lastSMS=Date.now();
+	this.consecutiveFails=0;
+	this.hourSended=0;
+	this.weekSended=0;
+	this.monthSended=0;
+	this.totSended=0;
+}
 
-var smsToSend = [];
-/*var sms = {
-	id:Date.now(),
-	number:"",
-	text:"",
-	sending:false
-};*/
+// SMS Pending List
+var smsPendingList = [];
+// Single SMS object
+function sms(id,number,text){
+	this.id=id;
+	this.number=number;
+	this.text=text;
+	this.sending=false;
+	this.sended=false;
+}
 
 
 // API POST method
@@ -43,16 +53,11 @@ app.post('/sendmessage', function (req, res) {
 	console.log("\nReceived API POST: "+number+" "+text);
 	
 	// Push SMS on pending list
-	var sms = {
-		id:Date.now(),
-		number:number,
-		text:text,
-		sending:true
-	};
-	smsToSend.push(sms);
+	var s = new sms(Date.now(),number,text);
+	smsPendingList.push(s);
 	
 	// Send SMS
-	sendMessage(number,text,sms.id);
+	sendMessage(number,text,s.id);
 	
 	res.send("ciao");
 		
@@ -68,25 +73,29 @@ io.on('connection', (socket) => {
 	socket.on("idAndroid", (idAndroid) => {
 		console.log('Socket '+socket.id+' has idAndroid: '+idAndroid)
 		
-		var device = {
-			idAndroid:idAndroid,
-			idSocket:socket.id,
-			number:"",
-			smsToSend:0,
-			lastSMS:0
-		};
-		devices.push(device);
+		// If device already exist change is status to connected
+		var exist=false;
+		for(d in devices){
+			if(devices[d].idAndroid==idAndroid){
+				exist=true;
+				devices[d].connected=true;
+				devices[d].idSocket=socket.id;
+				break;
+			}
+		}
+		// Else add a new device to list
+		if(exist==false)devices.push(new device(idAndroid,socket.id));
 		
-		printDevices();
+		printDevices("idAndroid");
 	});
 		
 	
 	// If an SMS is correctly sent
 	socket.on("smsACK", (idSMS) => {
 		// Remove sms from pending list
-		for(s in smsToSend){
-			if(smsToSend[s].id==idSMS){
-				smsToSend.splice(s, 1);
+		for(s in smsPendingList){
+			if(smsPendingList[s].id==idSMS){
+				smsPendingList.splice(s, 1);
 				break;
 			}
 		}
@@ -96,20 +105,23 @@ io.on('connection', (socket) => {
 			if(devices[d].idSocket==socket.id){
 				devices[d].lastSMS=Date.now();
 				devices[d].smsToSend--;
+				devices[d].totSended++;
+				devices[d].consecutiveFails=0;
 				break;
 			}
 		}
 		
-		printSmsToSend();
+		printsmsPendingList("smsACK");
 	});
+	
 	
 	// If an SMS is not correctly sent
 	socket.on("smsNACK", (idSMS) => {
-		printDevices();
+		printDevices("smsNACK BEGIN");
 		// Update sms state
-		for(s in smsToSend){
-			if(smsToSend[s].id==idSMS){
-				smsToSend[s].sending=false;
+		for(s in smsPendingList){
+			if(smsPendingList[s].id==idSMS){
+				smsPendingList[s].sending=false;
 				break;
 			}
 		}
@@ -118,12 +130,12 @@ io.on('connection', (socket) => {
 		for(d in devices){
 			if(devices[d].idSocket==socket.id){
 				devices[d].smsToSend--;
+				devices[d].consecutiveFails++;
 				break;
 			}
 		}
 		
-		printDevices();
-		printSmsToSend();
+		printState("smsNACK END")
 	});
 	
 	
@@ -136,12 +148,14 @@ io.on('connection', (socket) => {
 		//Delete device from list
 		for(d in devices){
 			if(devices[d].idSocket==socket.id){
-				devices.splice(d, 1);
+				devices[d].connected=false;
+				devices[d].smsToSend=0;
+				devices[d].consecutiveFails=0;
 				break;
 			}
 		}
 		
-		printDevices();
+		printDevices("Disconnect()");
 	})
 	
 })
@@ -150,46 +164,75 @@ io.on('connection', (socket) => {
 function sendMessage(number, text, idSMS){
 	if(devices.length<=0) return false;
 	// Choose which device has to send the message
-	var device=chooseDevice();
+	var d=chooseDevice();
+	if(d==-1){
+		console.log("SMS not sended: NO devices connected, "+d);
+		return false;
+	}
 	
 	// Update device params 
-	devices[device].smsToSend++;
+	devices[d].smsToSend++;
 	
-	// Build the message object
+	// Update sms params
+	for(s in sms){
+		if(sms[s].id==idSMS){
+			sms[s].sending=true;
+			break;
+		}
+	}
+	
+	// Build the message object to send
 	let  message = {"number":number, "text":text, "idSMS":idSMS}
 	
 	// Send the message
-	console.log("Sending to: "+devices[device].idSocket);
-	io.to(devices[device].idSocket).emit("message", message);
+	console.log("Sending to: "+devices[d].idSocket);
+	io.to(devices[d].idSocket).emit("message", message);
 	
-	printSmsToSend();
+	printState("sendMessage()");
+	
 }
 
-// Function that decides which devise has to sent the message
+
+// Function that decides which device has to sent the message
 function chooseDevice(){
 	//return randomIntInc(0, devices.length-1); //choose random
-	//Choose that one that has less SmsToSend
-	var min=10000;
-	var index=0;
+	//Choose that one that has less smsToSend
+	/*var min=10000;
+	var index=-1;
 	for(d in devices){
-		if(devices[d].smsToSend<min){
+		if(devices[d].smsToSend<min && devices[d].connected==true){
 			min=devices[d].smsToSend;
 			index=d;
 		}
 	}
+	return index;*/
+	
+	
+	//Choose the device that has minimum(1*smsToSend + 5*consecutiveFails)
+	var min=10000;
+	var index=-1;
+	for(d in devices){
+		var val=devices[d].smsToSend + (5*devices[d].consecutiveFails)
+		if(val<min && devices[d].connected==true){
+			min=val;
+			index=d;
+		}
+	}
 	return index;
+	
 }
 
 
 // Function that sends pending SMS not sent
 function sendPendingSMS(){
-	if(smsToSend.length>0 && devices.length>0){
+	printsmsPendingList();//LOG
+	if(smsPendingList.length>0 && devices.length>0){
 		console.log("\nSending pending:");
-		for(s in smsToSend){
-			// Update SMS state
-			smsToSend[s].sending=true;
-			// Send SMS
-			sendMessage(smsToSend[s].number,smsToSend[s].text,smsToSend[s].id);
+		for(s in smsPendingList){
+			if(smsPendingList[s].sending==false){
+				// Send SMS
+				sendMessage(smsPendingList[s].number,smsPendingList[s].text,smsPendingList[s].id);
+			}
 		}
 	}
 	setTimeout(sendPendingSMS, 30*1000);
@@ -197,51 +240,55 @@ function sendPendingSMS(){
 setTimeout(sendPendingSMS, 30*1000);
 
 
-
-// Display current state of Devices
-function printDevices(){
-	console.log("\nAvailable devices: ");
-	console.log("\tidSocket\t\tidAndroid\t\tsmsToSend");
-	for(d in devices){
-		//console.log("\t idSocket: "+devices[d].idSocket+"\t idAndroid: "+devices[d].idAndroid);
-		console.log("\t"+devices[d].idSocket+"\t"+devices[d].idAndroid+"\t"+devices[d].smsToSend);
+// If an SMS is >5 min older must be deleted from pending list
+function deleteOldSMS(){
+	if(smsPendingList.length>0){
+		var now = Date.now();
+		for(s in smsPendingList){
+			if((smsPendingList[s].id+5*60*1000)<=now){
+				console.log("Deleting pending SMS: "+smsPendingList[s].id);
+				// Remove sms from pending list
+				smsPendingList.splice(s, 1);
+			}
+		}
+		printsmsPendingList("deleteOldSMS()")
 	}
-	/*io.clients((error, clients) =>{
-		if(error) throw error;
-		console.log(clients);
-	});*/	
+	setTimeout(deleteOldSMS, 5*60*1000);
+}
+setTimeout(deleteOldSMS, 5*60*1000);
+
+// if a device has too many
+
+
+//////////////// LOG FUNCTIONS //////////////////////////
+// Display current state of Devices
+function printDevices(method=""){
+	console.log(method);
+	console.log("  Available devices: ");
+	console.log("    idSocket\t\t  idAndroid\t    smsToSend  Connected  Fails");
+	for(d in devices){
+		console.log("    "+devices[d].idSocket+"  "+devices[d].idAndroid+"     "+devices[d].smsToSend+"\t"+devices[d].connected+"       "+devices[d].consecutiveFails);
+	}
 }
 
 // Display current state of SMS
-function printSmsToSend(){
-	console.log("\nSmsToSend: ");
+function printsmsPendingList(method=""){
+	console.log(method);
+	console.log("  smsPendingList: ");
 	console.log("\tid\t\tSending\tNumber\t\tText");
-	for(s in smsToSend){
-		console.log("\t"+smsToSend[s].id+"\t"+smsToSend[s].sending+"\t"+smsToSend[s].number+"\t"+smsToSend[s].text);
+	for(s in smsPendingList){
+		console.log("\t"+smsPendingList[s].id+"\t"+smsPendingList[s].sending+"\t"+smsPendingList[s].number+"\t"+smsPendingList[s].text);
 	}
 }
 
+function printState(method=""){
+	console.log("\n\n"+method);
+	printDevices();
+	printsmsPendingList();
+}
 
 
+// Random integer number
 function randomIntInc(low, high) {
   return Math.floor(Math.random() * (high - low + 1) + low)
 }
-/*
-//Prova invio messagio ripetuto
-	function inviaMessaggio(){
-		for(d in devices){
-			var num = randomIntInc(1, 10).toString()
-			//create a message object 
-			let  message = {"number":"+393669791022", 
-										"text":num}
-			
-			// send the message
-			console.log("Sending to: "+devices[d])
-			io.to(devices[d]).emit('message', message);
-		}
-		
-		setTimeout(inviaMessaggio, 3*1000)
-	}
-	setTimeout(inviaMessaggio, 3*1000)
-	*/
-	

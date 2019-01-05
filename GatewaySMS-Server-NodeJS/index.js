@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////
-////////////////////// LIBRARIES /////////////////////////////////
+////////////////////// LIBRARIES ////////////////////////////////
 /////////////////////////////////////////////////////////////////
 var express = require('express');
 var app = express();
@@ -18,7 +18,7 @@ var fs = require('fs');
 
 
 /////////////////////////////////////////////////////////////////
-///////////////////////// SERVER SET-UP /////////////////////////////
+///////////////////////// SERVER SET-UP /////////////////////////
 /////////////////////////////////////////////////////////////////
 server.listen(3000,()=>{
 	console.log('Node app is running on port 3000');
@@ -30,7 +30,7 @@ server.listen(3000,()=>{
 /////////////////////////////////////////////////////////////////
 /////////////////  VARIABLES ////////////////////////////////////
 /////////////////////////////////////////////////////////////////
-// Available devices
+// Devices
 var devices = [];
 // Single device object
 function device(idAndroid, idSocket){
@@ -42,6 +42,7 @@ function device(idAndroid, idSocket){
 	this.lastSMS=0;
 	this.consecutiveFails=0;
 	this.hourSended=0;
+	this.daySended=0;
 	this.weekSended=0;
 	this.monthSended=0;
 	this.totSended=0;
@@ -70,6 +71,19 @@ app.post('/sendmessage', function (req, res) {
 	
 	console.log("\nReceived API POST: "+number+" "+text);
 	
+	//if there are no device available respond
+	var available=false;
+	for(d in devices){
+		if(devices[d].connected){
+			available=true;
+			return false;
+		}
+	}
+	if(!available){
+		res.send("CAN'T SEND THE SMS");
+	}
+	
+	
 	// Push SMS on pending list
 	var s = new sms(Date.now(),number,text);
 	smsPendingList.push(s);
@@ -78,8 +92,18 @@ app.post('/sendmessage', function (req, res) {
 	sendMessage(number,text,s.id);
 	
 	res.send("ciao");
+	
+	
 		
 });
+
+
+app.get('/', (req, res) => {
+  res.send("Hello World");
+	//res.sendFile(path.join(__dirname+'/index.html'));
+});
+
+
 /////////////////////////////////////////////////////////////////
 
 
@@ -128,6 +152,10 @@ io.on('connection', (socket) => {
 			if(devices[d].idSocket==socket.id){
 				devices[d].lastSMS=Date.now();
 				devices[d].smsToSend--;
+				devices[d].hourSended++;
+				devices[d].daySended++;
+				devices[d].weekSended++;
+				devices[d].monthSended++;
 				devices[d].totSended++;
 				devices[d].consecutiveFails=0;
 				break;
@@ -165,9 +193,7 @@ io.on('connection', (socket) => {
 	
 	// When the client disconnect
 	socket.on('disconnect', () => {
-
 		console.log('\nSocket '+socket.id+' Disconnected')
-		
 		//Delete device from list
 		for(d in devices){
 			if(devices[d].idSocket==socket.id){
@@ -178,7 +204,7 @@ io.on('connection', (socket) => {
 			}
 		}
 		
-		printDevices("Disconnect()");
+		printDevices("Disconnect()");	// LOG
 	})
 	
 })
@@ -220,6 +246,7 @@ function sendMessage(number, text, idSMS){
 	
 }
 
+
 // CHOOSE DEVICE
 // Decides which device has to sent the message
 function chooseDevice(){
@@ -234,24 +261,26 @@ function chooseDevice(){
 		}
 	}
 	return index;
-	
 }
 
+
 // SEND PENDING SMS
+//If an SMS after 60 sec is not being sent, try again
 function sendPendingSMS(){
 	printsmsPendingList();//LOG
-	if(smsPendingList.length>0 && devices.length>0){
+	if(smsPendingList.length>0){
 		console.log("\nSending pending:");
+		var now = Date.now();
 		for(s in smsPendingList){
-			if(smsPendingList[s].sending==false){
+			if((smsPendingList[s].id+60*1000)<=now){
 				// Send SMS
 				sendMessage(smsPendingList[s].number,smsPendingList[s].text,smsPendingList[s].id);
 			}
 		}
 	}
-	setTimeout(sendPendingSMS, 30*1000); // 30 seconds
+	setTimeout(sendPendingSMS, 60*1000); // 60 seconds
 }
-setTimeout(sendPendingSMS, 30*1000); // 30 seconds
+setTimeout(sendPendingSMS, 60*1000); // 60 seconds
 
 
 // DELETE OLD SMS
@@ -289,6 +318,35 @@ function disconnectFailing(){
 	setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
 }
 setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
+
+
+// RESET HOURLY MESSAGES SENT
+function resetHour(){
+	for(d in devices){
+		devices[d].hourSended=0;
+	}
+	setTimeout(resetHour, 60*60*1000); // 60 minutes
+}
+setTimeout(resetHour, 60*60*1000); // 60 minutes
+
+// RESET DAILY MESSAGES SENT
+function resetDay(){
+	for(d in devices){
+		devices[d].daySended=0;
+	}
+	setTimeout(resetDay, 24*60*60*1000); // 24 hours
+}
+setTimeout(resetDay, 24*60*60*1000); // 24 hours
+
+// RESET MONTHLY MESSAGES SENT
+function resetMonth(){
+	for(d in devices){
+		devices[d].monthSended=0;
+	}
+	setTimeout(resetMonth, 30*24*60*60*1000); // 30 days
+}
+setTimeout(resetMonth, 30*24*60*60*1000); // 30 days
+
 
 
 // SAVE THE STATE OF THE SYSTEM

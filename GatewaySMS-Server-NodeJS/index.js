@@ -58,6 +58,12 @@ function sms(id,number,text){
 	this.sending=false;
 	this.sended=false;
 }
+
+// LIMITS (Max SMS that a device can send)
+var hourLimit = 100;
+var dayLimit = 200;
+var monthLimit = 3000;
+
 /////////////////////////////////////////////////////////////////
 
 
@@ -72,7 +78,7 @@ app.post('/sendmessage', function (req, res) {
 	console.log("\nReceived API POST: "+number+" "+text);
 	
 	//if there are no device available respond
-	var available=false;
+	/*var available=false;
 	for(d in devices){
 		if(devices[d].connected){
 			available=true;
@@ -81,7 +87,7 @@ app.post('/sendmessage', function (req, res) {
 	}
 	if(!available){
 		res.send("CAN'T SEND THE SMS");
-	}
+	}*/
 	
 	
 	// Push SMS on pending list
@@ -98,11 +104,24 @@ app.post('/sendmessage', function (req, res) {
 });
 
 
+
+// INTERACT WITH SERVER
 app.get('/', (req, res) => {
   res.send("Hello World");
 	//res.sendFile(path.join(__dirname+'/index.html'));
 });
 
+app.get('/getState', (req, res) => {
+	var myJSON = JSON.stringify(devices);
+  res.send(myJSON);
+});
+
+app.get('/editState/', (req, res) => {
+	// TODO
+	
+	var myJSON = JSON.stringify(devices);
+  res.send(myJSON);
+});
 
 /////////////////////////////////////////////////////////////////
 
@@ -249,12 +268,20 @@ function sendMessage(number, text, idSMS){
 
 // CHOOSE DEVICE
 // Decides which device has to sent the message
+// Choose the device that has:
+//     minimum(1*hourSended + 2*smsToSend + 5*consecutiveFails)
 function chooseDevice(){
-	//Choose the device that has minimum(1*smsToSend + 5*consecutiveFails)
 	var min=10000;
 	var index=-1;
 	for(d in devices){
-		var val=devices[d].smsToSend + (5*devices[d].consecutiveFails)
+		// if the devices has sended too many SMS, skip
+		if(devices[d].hourSended>=hourLimit ||
+			devices[d].daySended>=dayLimit ||
+			devices[d].monthSended>=monthLimit) continue;
+
+		var val = devices[d].hourSended 
+					+ 2*devices[d].smsToSend 
+					+ 5*devices[d].consecutiveFails;
 		if(val<min && devices[d].connected==true){
 			min=val;
 			index=d;
@@ -265,7 +292,7 @@ function chooseDevice(){
 
 
 // SEND PENDING SMS
-//If an SMS after 60 sec is not being sent, try again
+// If an SMS after 60 sec is not being sent, try again
 function sendPendingSMS(){
 	printsmsPendingList();//LOG
 	if(smsPendingList.length>0){
@@ -315,9 +342,9 @@ function disconnectFailing(){
 		}
 	}
 	
-	setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
+	setTimeout(disconnectFailing, 2*60*1000); // 2 minutes
 }
-setTimeout(disconnectFailing, 3*60*1000); // 3 minutes
+setTimeout(disconnectFailing, 2*60*1000); // 2 minutes
 
 
 // RESET HOURLY MESSAGES SENT
@@ -338,14 +365,19 @@ function resetDay(){
 }
 setTimeout(resetDay, 24*60*60*1000); // 24 hours
 
-// RESET MONTHLY MESSAGES SENT
-function resetMonth(){
+// RESET WEEKLY & MONTHLY MESSAGES SENT
+// Also monthly because setTimeout has 24 days limit
+var week=0;
+function resetWeek(){
+	week++;	// Week counter
 	for(d in devices){
-		devices[d].monthSended=0;
+		devices[d].weekSended=0;
+		if(week>=4)devices[d].monthSended=0;	// Reset month
 	}
-	setTimeout(resetMonth, 30*24*60*60*1000); // 30 days
+	if(week>=4)week=0;	// Reste week counter
+	setTimeout(resetWeek, 7*24*60*60*1000); // 7 days
 }
-setTimeout(resetMonth, 30*24*60*60*1000); // 30 days
+setTimeout(resetWeek, 7*24*60*60*1000); // 7 days
 
 
 
@@ -369,6 +401,13 @@ function saveState(){
 	setTimeout(saveState, 1*60*1000); // 1 minutes
 }
 setTimeout(saveState, 1*60*1000); // 1 minutes
+
+// LOAD THE STATE OF THE SYSTEM
+function loadState(){
+	// TODO
+	//???????
+}
+
 
 /////////////////////////////////////////////////////////////////
 

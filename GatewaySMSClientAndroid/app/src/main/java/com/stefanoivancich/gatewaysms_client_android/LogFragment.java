@@ -1,7 +1,6 @@
 package com.stefanoivancich.gatewaysms_client_android;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;

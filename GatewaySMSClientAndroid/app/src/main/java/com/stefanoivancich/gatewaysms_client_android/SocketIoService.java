@@ -3,7 +3,6 @@ package com.stefanoivancich.gatewaysms_client_android;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -99,7 +98,7 @@ public class SocketIoService extends Service {
 
       deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-      uri="http://192.168.1.105:3000";
+      //uri="http://192.168.1.105:3000";
       //connectToSocket();
 
     return START_STICKY;
@@ -207,6 +206,17 @@ public class SocketIoService extends Service {
         }
       });
 
+
+      // SERVER disconnect the device due to too many fails
+      socket.on("fail", new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+          Log.d("SocketIOService","Disconnected by the server");
+
+          disconnectFromSocket();
+        }
+      });
+
     }catch (URISyntaxException e) {
       e.printStackTrace();
     }
@@ -216,6 +226,10 @@ public class SocketIoService extends Service {
   private void disconnectFromSocket(){
     socket.disconnect();
     isConnected=false;
+
+    // Set UI components to NOT ACTIVE state
+    Events.activeUI event = new Events.activeUI(false);
+    GlobalBus.getBus().post(event);
   }
 
 

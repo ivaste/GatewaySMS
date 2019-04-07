@@ -2,7 +2,14 @@
 
 ![structure](https://github.com/ivaste/GatewaySMS/blob/master/Documentation/GatewaySMS_Scheme.png)
 
-GatewaySMS is a NodeJS - Android....
+
+## Overview
+GatewaySMS is a NodeJS Express - Android system that convert an API request to a SMS.
+
+Currently (2019) it is not possible to use the internet to send text messages to mobile phones. You must necessarily use the GSM network, therefore a particular antenna capable of connecting.  
+From a brief feasibility study it turned out that using a physical hardware device like Arduino (30 €) or Raspberry Pi (40 €) with the SIM900 shield [Link](https://www.amazon.it/AZDelivery-SIM-900-Antenna-Arduino/dp/B01M9J4N56/ref=sr_1_2?ie=UTF8&qid=1544983884&sr=8-2&keywords=arduino+gsm+shield+2) (30 €), is not convenient, especially for the low reliability, the continuous maintenance required and non-portability.  
+Any Android smartphone is enough, better if it has dual SIM support.
+
 
 ## Installation
 
@@ -21,10 +28,33 @@ Start the server by running:
 node index.js
 ```
 
+Install the apk to the Android smartphones that you want to use has SMS sender.
+
+API POST structure:
+```
+URL: http://192.168.1.105:3000/sendmessage
+Header:
+Content-Type: application/json
+Body:
+{
+  "number": "+391234567891",
+  "text": "helloooo"
+}
+```
+
+API POST example: 
+```bash
+curl -X POST -H 'Content-Type: application/json' -d '{
+  "number": "+391234567891",
+  "text": "helloooo"
+}' -v -i 'http://192.168.1.105:3000/sendmessage'
+```
+
 ## Features
 
 - [x] Basic Android app
 - [x] Basic NodeJS Server API
+- [x] Choose the device that has less SMS sent
 - [ ] Double SIM support
 - [ ] Interactive UI for server side
 

@@ -1,5 +1,7 @@
 # GatewaySMS
 
+![structure](https://github.com/ivaste/GatewaySMS/blob/master/Documentation/GatewaySMS_Scheme.png)
+
 GatewaySMS is a NodeJS - Android....
 
 ## Installation
@@ -19,10 +21,17 @@ Start the server by running:
 node index.js
 ```
 
+## Features
+
+- [x] Basic Android app
+- [x] Basic NodeJS Server API
+- [ ] Double SIM support
+- [ ] Interactive UI for server side
+
+
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Please make sure to update tests as appropriate.
-
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+- **[MIT license](http://opensource.org/licenses/mit-license.php)**

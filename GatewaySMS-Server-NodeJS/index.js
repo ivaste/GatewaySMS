@@ -156,7 +156,7 @@ io.on('connection', (socket) => {
 	});
 		
 	
-	// If an SMS is correctly sent
+	// If an SMS is CORRECTLY SENT
 	socket.on("smsACK", (idSMS) => {
 		// Remove sms from pending list
 		for(s in smsPendingList){
@@ -185,7 +185,7 @@ io.on('connection', (socket) => {
 	});
 	
 	
-	// If an SMS is not correctly sent
+	// If an SMS is NOT CORRECTLY
 	socket.on("smsNACK", (idSMS) => {
 		printDevices("smsNACK BEGIN");
 		// Update sms state
@@ -213,7 +213,7 @@ io.on('connection', (socket) => {
 	// When the client disconnect
 	socket.on('disconnect', () => {
 		console.log('\nSocket '+socket.id+' Disconnected')
-		//Delete device from list
+		// Set device as NOT Active
 		for(d in devices){
 			if(devices[d].idSocket==socket.id){
 				devices[d].connected=false;

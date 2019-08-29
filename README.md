@@ -28,7 +28,7 @@ Start the server by running:
 node index.js
 ```
 
-Install the apk to the Android smartphones that you want to use has SMS sender.
+Install the apk to Android smartphones that you want to use has SMS sender.
 
 API POST structure:
 ```
@@ -49,6 +49,18 @@ curl -X POST -H 'Content-Type: application/json' -d '{
   "text": "helloooo"
 }' -v -i 'http://192.168.1.105:3000/sendmessage'
 ```
+<!--
+## Docker image
+Download Docker image:
+```bash
+docker pull onaciccio/gateway:v1
+```
+
+Or just run it:
+```bash
+docker run -p 3000:3000 onaciccio/gateway:v1
+```
+-->
 
 ## Features
 

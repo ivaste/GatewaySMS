@@ -25,7 +25,7 @@ The offers "unlimited SMS" do not really give the possibility to send an infinit
 
 # Costs
 
-Cost of a SIM: € 10 activation + 3-5 €/month for the plan
+- Cost of a SIM: € 10 activation + 3-5 €/month for the plan
 - Annual SIM cost: 46-70 €
 - Smartphone cost: <50 €
 - Annual smartphone cost: <25 € (If we change smartphone every 2 years)
